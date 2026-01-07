@@ -9,7 +9,7 @@
 #include "sol/sol.hpp"
 
 struct Attack {
-	sol::coroutine cr;
+	sol::function fn;
 	float timer;
 	std::optional<Attack*> next;
 };
@@ -21,7 +21,6 @@ namespace LuaManager {
 
 	template<typename T>
 	void add_function_binding(const std::string& fn_name, T fn) {
-		std::cout << "pingas!";
 		lua.set_function(fn_name, fn);
 	}
 

@@ -4,6 +4,9 @@
 namespace LuaManager {
 	std::optional<Attack*> attack_list;
 	std::optional<Attack*> active_attack;
+
+	sol::thread active_thread;
+	std::optional<sol::coroutine> active_coroutine;
 	float wait_time;
 	float wait_counter_time;
 	float attack_counter_time;
@@ -16,48 +19,59 @@ namespace LuaManager {
 			"coroutine.yield(ms)"
 			"end"
 		);
+		active_thread = sol::thread::create(lua);
 	}
 
 	void unload_folder(const std::string& folder_name) {
 		return;
 	}
 
-	sol::protected_function_result continue_attack_script() {
-		return (active_attack.value()->cr)();
+	std::optional<sol::protected_function_result> continue_attack_script() {
+		if (active_coroutine) {
+			return active_coroutine.value()();
+		}
+		return std::nullopt;
+	}
+
+	void load_next_attack() {
+		auto next_attack = active_attack.value()->next;
+		if (!next_attack) {
+			std::cout << "no next attack";
+			return;
+		}
+		active_attack = next_attack;
+		attack_counter_time = 0;
+		wait_counter_time = 0;
+		wait_time = 0;
+
+		active_coroutine = sol::coroutine(active_attack.value()->fn);
 	}
 
 	void update(float dt) {
-		if (!active_attack) {
+		if (!active_coroutine) {
 			return;
 		}
 		if (attack_counter_time >= active_attack.value()->timer) {
-			auto next_attack = active_attack.value()->next;
-			if (!next_attack) {
-				attack_counter_time = 0;
-				return;
-			}
-			active_attack = next_attack;
+			load_next_attack();
+			std::cout << "past 2 seconds";
+			return;
 		}
 
 		if (wait_counter_time >= wait_time) {
 			wait_counter_time -= wait_time;
 			auto result = continue_attack_script();
-			std::cout << result.valid() << std::endl;
 
-			if (result.valid()) {
-				switch (result.status()) {
+			if (!result || !result->valid()) {
+				return;
+			}
+
+			switch (result->status()) {
 				case sol::call_status::ok: {
-					auto next_attack = active_attack.value()->next;
-					if (!next_attack) {
-						attack_counter_time = 0;
-						return;
-					}
-					active_attack = next_attack;
+					load_next_attack();
 					break;
 				}
 				case sol::call_status::yielded: {
-					wait_time = result;
-					}
+					wait_time = result.value();
 				}
 			}
 		}
@@ -79,13 +93,14 @@ namespace LuaManager {
 
 		const sol::table attack_data = attack_list_lua[1];
 
-		sol::coroutine attack_cr = attack_data["attack"];
+		sol::function attack_fn = attack_data["attack"];
 
 		Attack *prev = new Attack();
-		prev->cr = attack_data["attack"];
+		prev->fn = attack_data["attack"];
 		prev->timer = attack_data.get_or("duration", 0.0) * 1000;
 		attack_list = prev;
 		active_attack = attack_list;
+		active_coroutine = sol::coroutine(attack_fn);
 
 		if (attack_list_lua.size() == 1) {
 			return;
@@ -94,10 +109,10 @@ namespace LuaManager {
 		for (std::size_t i = 2; i <= attack_list_lua.size(); i++) {
 			const sol::table attack_data = attack_list_lua[i];
 
-			sol::coroutine attack_cr = attack_data["attack"];
+			sol::function attack_fn = attack_data["attack"];
 
 			Attack *cur = new Attack();
-			cur->cr = attack_data["attack"];
+			cur->fn = attack_data["attack"];
 			cur->timer = attack_data.get_or("duration", 0.0) * 1000;
 			prev->next = std::optional<Attack*>(cur);
 			prev = cur;

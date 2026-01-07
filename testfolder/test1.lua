@@ -47,6 +47,8 @@ end
 
 
 function attack2()
+	while true do
+
 	r = 0
 	angle = 0
 	for n=0,48 do
@@ -67,5 +69,5 @@ function attack2()
 		wait(50)
 	end
 
-	attack2()
+	end
 end
