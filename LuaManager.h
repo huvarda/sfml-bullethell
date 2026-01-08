@@ -9,9 +9,7 @@
 #include "sol/sol.hpp"
 
 struct Attack {
-	sol::function fn;
 	float timer;
-	std::optional<Attack*> next;
 };
 
 namespace LuaManager {

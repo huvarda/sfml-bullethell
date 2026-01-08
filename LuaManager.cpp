@@ -1,9 +1,9 @@
 #include "LuaManager.h"
-
+#include <vector>
 
 namespace LuaManager {
-	std::optional<Attack*> attack_list;
-	std::optional<Attack*> active_attack;
+	std::vector<Attack> attack_list;
+	int active_attack_idx;
 
 	sol::thread active_thread;
 	std::optional<sol::coroutine> active_coroutine;
@@ -19,7 +19,7 @@ namespace LuaManager {
 			"coroutine.yield(ms)"
 			"end"
 		);
-		active_thread = sol::thread::create(lua);
+		active_thread = sol::thread::create(lua.lua_state());
 	}
 
 	void unload_folder(const std::string& folder_name) {
@@ -34,26 +34,30 @@ namespace LuaManager {
 	}
 
 	void load_next_attack() {
-		auto next_attack = active_attack.value()->next;
-		if (!next_attack) {
+		active_attack_idx++;
+		if (active_attack_idx >= attack_list.size()) {
 			std::cout << "no next attack";
+			active_attack_idx--;
+
 			return;
 		}
-		active_attack = next_attack;
 		attack_counter_time = 0;
 		wait_counter_time = 0;
 		wait_time = 0;
+		std::cout << active_coroutine.value().lua_state() << std::endl;
 
-		active_coroutine = sol::coroutine(active_attack.value()->fn);
+		active_thread = sol::thread::create(lua.lua_state());
+		active_coroutine = sol::nil;
+		active_coroutine = active_thread.state()["attack_list"][active_attack_idx+1]["attack"];
 	}
 
 	void update(float dt) {
 		if (!active_coroutine) {
 			return;
 		}
-		if (attack_counter_time >= active_attack.value()->timer) {
+		if (attack_counter_time >= attack_list[active_attack_idx].timer) {
 			load_next_attack();
-			std::cout << "past 2 seconds";
+			std::cout << "past 3 seconds";
 			return;
 		}
 
@@ -91,35 +95,21 @@ namespace LuaManager {
 			unload_folder(folder_name);
 		}
 
-		const sol::table attack_data = attack_list_lua[1];
+		attack_list.clear();
 
-		sol::function attack_fn = attack_data["attack"];
+		for (int i = 1; i <= attack_list_lua.size(); i++) {
 
-		Attack *prev = new Attack();
-		prev->fn = attack_data["attack"];
-		prev->timer = attack_data.get_or("duration", 0.0) * 1000;
-		attack_list = prev;
-		active_attack = attack_list;
-		active_coroutine = sol::coroutine(attack_fn);
-
-		if (attack_list_lua.size() == 1) {
-			return;
-		}
-
-		for (std::size_t i = 2; i <= attack_list_lua.size(); i++) {
 			const sol::table attack_data = attack_list_lua[i];
+			const float dur = attack_data.get_or("duration", 0.0) * 1000;
 
-			sol::function attack_fn = attack_data["attack"];
-
-			Attack *cur = new Attack();
-			cur->fn = attack_data["attack"];
-			cur->timer = attack_data.get_or("duration", 0.0) * 1000;
-			prev->next = std::optional<Attack*>(cur);
-			prev = cur;
+			attack_list.push_back({ dur });
 		}
 
+		active_attack_idx = 0;
 		attack_counter_time = 0;
 		wait_counter_time = 0;
-	}
+		wait_time = 0;
 
+		active_coroutine = active_thread.state()["attack_list"][1]["attack"];
+	}
 }
