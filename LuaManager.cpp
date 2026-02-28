@@ -1,4 +1,6 @@
 #include "LuaManager.h"
+#include "BulletManager.h"
+
 #include <vector>
 
 namespace LuaManager {
@@ -89,11 +91,25 @@ namespace LuaManager {
 
 		lua.safe_script_file(folder_name+"/main.lua");
 
+		std::string shot_image = lua["shot_image"];
+		BulletManager::bulletSheet.loadFromFile(folder_name+"/"+shot_image);
+
+		sol::table shots_lua = lua["shots"];
+		for (int i = 1; i <= shots_lua.size(); i++) {
+			sol::table shot_data_lua = shots_lua[i];
+			float left = shot_data_lua[1];
+			float top = shot_data_lua[2];
+			float width = shot_data_lua.get<float>(3) - left;
+			float height = shot_data_lua.get<float>(4) - top;
+			BulletManager::shotData.push_back({ {left, top}, width, height });
+		}
+
 		sol::table attack_list_lua = lua["attack_list"];
 
 		if (attack_list_lua.size() == 0) {
 			unload_folder(folder_name);
 		}
+	
 
 		attack_list.clear();
 

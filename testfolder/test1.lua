@@ -53,7 +53,8 @@ function attack2()
 	angle = 0
 	for n=0,48 do
 		for j=0,2 do
-			shotA1(683+r*cos(angle)*1.1,384+r*sin(angle),0.06*(3.5-n/18+j/2),angle+180+n+18,1,12)
+			c=math.random(8,15)
+			shotA1(683+r*cos(angle)*1.1,384+r*sin(angle),0.06*(3.5-n/18+j/2),angle+180+n+18, c,12)
 		end
 		r=r+5
 		angle = angle-17

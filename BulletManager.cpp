@@ -10,8 +10,7 @@ namespace BulletManager {
 	size_t maxBullets;
 
 	std::vector<Bullet> bullets;
-
-	ShotData csd = { ABSOLUTE, {90, 90}, 100, 10, 0, 0, 0};
+	std::vector<ShotData> shotData;
 
 	size_t boundH;
 	size_t boundW;
@@ -38,7 +37,7 @@ namespace BulletManager {
 		BulletManager::boundW = boundW;
 		BulletManager::boundH = boundH;
 
-		bulletSheet.loadFromFile("data/sprites.png");
+		bulletSheet.loadFromFile("data/default_shots.png");
 	}
 
 	//sf::IntRect({ 0, 64 }, { 16, 16 })
@@ -49,12 +48,14 @@ namespace BulletManager {
 				bullets[i].update(dt);
 				sf::Vertex* triangles = &vertices[i * 6];
 
-				triangles[0].position = bullets[i].pos;
-				triangles[1].position = bullets[i].pos + sf::Vector2f(16, 0);
-				triangles[2].position = bullets[i].pos + sf::Vector2f(0, 16);
-				triangles[3].position = bullets[i].pos + sf::Vector2f(0, 16);
-				triangles[4].position = bullets[i].pos + sf::Vector2f(16, 0);
-				triangles[5].position = bullets[i].pos + sf::Vector2f(16, 16);
+				ShotData shot_data = shotData[bullets[i].texId];
+
+				triangles[0].position = bullets[i].pos + sf::Vector2f(-shot_data.width / 2, -shot_data.height / 2);
+				triangles[1].position = bullets[i].pos + sf::Vector2f(shot_data.width / 2, -shot_data.height / 2);
+				triangles[2].position = bullets[i].pos + sf::Vector2f(-shot_data.width / 2, shot_data.height / 2);
+				triangles[3].position = bullets[i].pos + sf::Vector2f(-shot_data.width / 2, shot_data.height / 2);
+				triangles[4].position = bullets[i].pos + sf::Vector2f(shot_data.width / 2, -shot_data.height / 2);
+				triangles[5].position = bullets[i].pos + sf::Vector2f(shot_data.width / 2, shot_data.height / 2);
 
 				//Make inactive if out of bounds
 				if (bullets[i].pos.x > boundW || bullets[i].pos.y > boundH || (bullets[i].pos.x+16 < 0) || (bullets[i].pos.y+16 < 0)) {
@@ -65,7 +66,7 @@ namespace BulletManager {
 		counterTime += dt;
 	}
 
-	void shotA1(float x, float y, float speed, float angle, int graphic, int delay) {
+	void shotA1(float x, float y, float speed, float angle, int shot_type, int delay) {
 		// Reset the number of bullet when the max is reached
 		if (numBullet == maxBullets) {
 			numBullet = 0;
@@ -74,25 +75,27 @@ namespace BulletManager {
 		//New bullet information
 		bullets[numBullet].pos = sf::Vector2f(x, y);
 		bullets[numBullet].vel = sf::Vector2f(speed * cos(angle), speed * sin(angle));
-		bullets[numBullet].texId = graphic;
+		bullets[numBullet].texId = shot_type;
 		bullets[numBullet].active = true;
 
 		//New bullet sprite information
 		sf::Vertex* triangles = &(vertices)[numBullet * 6];
 
-		triangles[0].position = bullets[numBullet].pos;
-		triangles[1].position = bullets[numBullet].pos + sf::Vector2f(16, 0);
-		triangles[2].position = bullets[numBullet].pos + sf::Vector2f(0, 16);
-		triangles[3].position = bullets[numBullet].pos + sf::Vector2f(0, 16);
-		triangles[4].position = bullets[numBullet].pos + sf::Vector2f(16, 0);
-		triangles[5].position = bullets[numBullet].pos + sf::Vector2f(16, 16);
+		ShotData shot_data = shotData[shot_type];
 
-		triangles[0].texCoords = sf::Vector2f(0, 64);
-		triangles[1].texCoords = sf::Vector2f(0, 64) + sf::Vector2f(16, 0);
-		triangles[2].texCoords = sf::Vector2f(0, 64) + sf::Vector2f(0, 16);
-		triangles[3].texCoords = sf::Vector2f(0, 64) + sf::Vector2f(0, 16);
-		triangles[4].texCoords = sf::Vector2f(0, 64) + sf::Vector2f(16, 0);
-		triangles[5].texCoords = sf::Vector2f(0, 64) + sf::Vector2f(16, 16);
+		triangles[0].position = bullets[numBullet].pos + sf::Vector2f(-shot_data.width / 2, -shot_data.height / 2);
+		triangles[1].position = bullets[numBullet].pos + sf::Vector2f(shot_data.width / 2, -shot_data.height / 2);
+		triangles[2].position = bullets[numBullet].pos + sf::Vector2f(-shot_data.width / 2, shot_data.height / 2);
+		triangles[3].position = bullets[numBullet].pos + sf::Vector2f(-shot_data.width / 2, shot_data.height / 2);
+		triangles[4].position = bullets[numBullet].pos + sf::Vector2f(shot_data.width / 2, -shot_data.height / 2);
+		triangles[5].position = bullets[numBullet].pos + sf::Vector2f(shot_data.width / 2, shot_data.height / 2);
+
+		triangles[0].texCoords = shot_data.top_left; //top left
+		triangles[1].texCoords = shot_data.top_left + sf::Vector2f(shot_data.width, 0); // top right
+		triangles[2].texCoords = shot_data.top_left + sf::Vector2f(0, shot_data.height); // bottom left
+		triangles[3].texCoords = shot_data.top_left + sf::Vector2f(0, shot_data.height); // bottom left
+		triangles[4].texCoords = shot_data.top_left + sf::Vector2f(shot_data.width, 0);
+		triangles[5].texCoords = shot_data.top_left + sf::Vector2f(shot_data.width, shot_data.height); // bottom right
 
 		numBullet++;
 	}

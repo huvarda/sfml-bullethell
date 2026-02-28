@@ -2,30 +2,21 @@
 #include <vector>
 #include <SFML\Graphics.hpp>
 
+
 struct Bullet {
 	sf::Vector2f pos;
 	sf::Vector2f vel;
+	float hitcircle;
 	int texId;
 	bool active;
 
 	void update(float timeElapsed);
 };
 
-enum ShotType {
-	ABSOLUTE,
-	RELATIVE,
-	ABSOLUTE_W_ACCELERATION,
-	RELATIVE_W_ACCELERATION,
-};
-
 struct ShotData {
-	ShotType shotType;
-	sf::Vector2f pos;
-	float speed;
-	float angle;
-	float spawnDelay;
-	float acceleration;
-	float maxSpeed;
+	sf::Vector2f top_left;
+	float width;
+	float height;
 
 };
 
@@ -33,6 +24,7 @@ struct ShotData {
 namespace BulletManager {
 	extern size_t maxBullets;
 	extern std::vector<Bullet> bullets;
+	extern std::vector<ShotData> shotData;
 
 	extern size_t boundW;
 	extern size_t boundH;
