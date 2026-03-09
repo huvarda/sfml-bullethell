@@ -1,2 +1,3 @@
 # Demo Video
-<iframe width="560" height="315" src="https://www.youtube.com/embed/SFWw20o4ZQo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+[<img src="https://img.youtube.com/vi/SFWw20o4ZQo/hqdefault.jpg" width="600" height="300"
+/>](https://www.youtube.com/embed/SFWw20o4ZQo)
